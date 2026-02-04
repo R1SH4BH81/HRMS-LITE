@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://your-backend-url/api/$1"
+      "dest": "https://hrms-lite-backend.onrender.com/api/$1"
     },
     {
       "src": "/(.*)",
@@ -20,6 +20,6 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://your-backend-url"
+    "REACT_APP_API_URL": "https://hrms-lite-backend.onrender.com"
   }
 }
