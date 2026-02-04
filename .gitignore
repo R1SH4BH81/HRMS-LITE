@@ -66,3 +66,4 @@ Thumbs.db
 
 # Test files
 test-api.js
+.vercel

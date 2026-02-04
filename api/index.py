@@ -154,3 +154,7 @@ async def create_attendance(attendance: AttendanceCreate):
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/")
+async def root():
+    return {"message": "HRMS API is running"}
