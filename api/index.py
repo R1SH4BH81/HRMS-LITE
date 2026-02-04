@@ -20,6 +20,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://hrms-lite-drab.vercel.app",
         "https://hrms-lite-git-main-r1sh4bh81s-projects.vercel.app",
         "https://hrms-lite-9cb9.vercel.app",
         "http://localhost:3000",
