@@ -36,6 +36,14 @@ db = client["hrms_lite"]
 employees_collection = db["employees"]
 attendance_collection = db["attendance"]
 
+# Create indexes
+try:
+    employees_collection.create_index("employeeId", unique=True)
+    employees_collection.create_index("email", unique=True)
+    attendance_collection.create_index([("employeeId", 1), ("date", 1)], unique=True)
+except Exception as e:
+    print(f"Error creating indexes: {e}")
+
 # Pydantic models
 class EmployeeCreate(BaseModel):
     employeeId: str = Field(..., min_length=1)
