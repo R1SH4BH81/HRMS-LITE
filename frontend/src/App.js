@@ -89,7 +89,7 @@ function App() {
 
     try {
       await axios.delete(
-        `${API_BASE_URL}/api/employees/${deleteModal.employee._id}`,
+        `${API_BASE_URL}/api/employees/${deleteModal.employee.id}`,
       );
       fetchEmployees();
       setDeleteModal({ isOpen: false, employee: null });
@@ -108,6 +108,21 @@ function App() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Check if attendance already exists for this employee and date
+    const existingAttendance = attendance.find(
+      (record) =>
+        record.employeeId === attendanceForm.employeeId &&
+        record.date === attendanceForm.date,
+    );
+
+    if (existingAttendance) {
+      setError(
+        `Attendance already marked for this employee on ${new Date(attendanceForm.date).toLocaleDateString()}`,
+      );
+      setLoading(false);
+      return;
+    }
 
     try {
       await axios.post(`${API_BASE_URL}/api/attendance`, attendanceForm);
@@ -225,7 +240,7 @@ function App() {
               ) : (
                 <div className="employee-grid">
                   {employees.map((employee) => (
-                    <div key={employee._id} className="employee-card">
+                    <div key={employee.id} className="employee-card">
                       <div className="employee-info">
                         <h3>{employee.fullName}</h3>
                         <p>
@@ -273,7 +288,7 @@ function App() {
                   >
                     <option value="">Select Employee</option>
                     {employees.map((employee) => (
-                      <option key={employee._id} value={employee._id}>
+                      <option key={employee.id} value={employee.employeeId}>
                         {employee.fullName} ({employee.employeeId})
                       </option>
                     ))}
@@ -322,25 +337,35 @@ function App() {
                 </div>
               ) : (
                 <div className="attendance-list">
-                  {attendance.map((record) => (
-                    <div key={record._id} className="attendance-item">
-                      <div className="attendance-info">
-                        <h4>{record.employeeId.fullName}</h4>
-                        <p>
-                          <strong>Date:</strong>{" "}
-                          {new Date(record.date).toLocaleDateString()}
-                        </p>
-                        <p>
-                          <strong>Status:</strong>
-                          <span
-                            className={`status-badge ${record.status.toLowerCase()}`}
-                          >
-                            {record.status}
-                          </span>
-                        </p>
+                  {attendance.map((record) => {
+                    const employee = employees.find(
+                      (emp) => emp.employeeId === record.employeeId,
+                    );
+                    return (
+                      <div
+                        key={`${record.id}-${record.date}`}
+                        className="attendance-item"
+                      >
+                        <div className="attendance-info">
+                          <h4>
+                            {employee ? employee.fullName : record.employeeId}
+                          </h4>
+                          <p>
+                            <strong>Date:</strong>{" "}
+                            {new Date(record.date).toLocaleDateString()}
+                          </p>
+                          <p>
+                            <strong>Status:</strong>
+                            <span
+                              className={`status-badge ${record.status.toLowerCase()}`}
+                            >
+                              {record.status}
+                            </span>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
