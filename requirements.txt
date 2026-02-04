@@ -1,0 +1,8 @@
+django > 3.0
+djangorestframework
+django-cors-headers
+django-heroku
+gunicorn
+django-crispy-forms
+pusher
+six
