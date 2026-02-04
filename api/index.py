@@ -36,11 +36,6 @@ db = client["hrms_lite"]
 employees_collection = db["employees"]
 attendance_collection = db["attendance"]
 
-# Create indexes
-employees_collection.create_index("employeeId", unique=True)
-employees_collection.create_index("email", unique=True)
-attendance_collection.create_index([("employeeId", 1), ("date", 1)], unique=True)
-
 # Pydantic models
 class EmployeeCreate(BaseModel):
     employeeId: str = Field(..., min_length=1)
@@ -69,7 +64,7 @@ class AttendanceResponse(BaseModel):
     status: str
     createdAt: datetime
 
-# Helper function to convert ObjectId to string
+# Helper functions
 def employee_helper(employee) -> dict:
     return {
         "id": str(employee["_id"]),
@@ -90,7 +85,7 @@ def attendance_helper(attendance) -> dict:
         "createdAt": attendance["createdAt"]
     }
 
-# Employee routes
+# Routes
 @app.get("/api/employees", response_model=List[EmployeeResponse])
 async def get_employees():
     employees = list(employees_collection.find())
@@ -98,20 +93,15 @@ async def get_employees():
 
 @app.post("/api/employees", response_model=EmployeeResponse)
 async def create_employee(employee: EmployeeCreate):
-    # Check if employee ID already exists
     if employees_collection.find_one({"employeeId": employee.employeeId}):
         raise HTTPException(status_code=400, detail="Employee ID already exists")
-    
-    # Check if email already exists
     if employees_collection.find_one({"email": employee.email}):
         raise HTTPException(status_code=400, detail="Email already exists")
     
     employee_dict = employee.dict()
     employee_dict["createdAt"] = datetime.utcnow()
-    
     result = employees_collection.insert_one(employee_dict)
     created_employee = employees_collection.find_one({"_id": result.inserted_id})
-    
     return employee_helper(created_employee)
 
 @app.delete("/api/employees/{employee_id}")
@@ -120,35 +110,25 @@ async def delete_employee(employee_id: str):
         obj_id = ObjectId(employee_id)
     except:
         raise HTTPException(status_code=400, detail="Invalid employee ID format")
-    
     result = employees_collection.delete_one({"_id": obj_id})
-    
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Employee not found")
-    
     return {"message": "Employee deleted successfully"}
 
-# Attendance routes
 @app.get("/api/attendance", response_model=List[AttendanceResponse])
 async def get_attendance():
     attendance = list(attendance_collection.find())
-    
-    # Add employee names to attendance records
     for record in attendance:
         employee = employees_collection.find_one({"employeeId": record["employeeId"]})
         if employee:
             record["employeeName"] = employee["fullName"]
-    
     return [attendance_helper(att) for att in attendance]
 
 @app.post("/api/attendance", response_model=AttendanceResponse)
 async def create_attendance(attendance: AttendanceCreate):
-    # Check if employee exists
     employee = employees_collection.find_one({"employeeId": attendance.employeeId})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
-    
-    # Check if attendance already exists for this employee and date
     existing = attendance_collection.find_one({
         "employeeId": attendance.employeeId,
         "date": attendance.date
@@ -159,17 +139,10 @@ async def create_attendance(attendance: AttendanceCreate):
     attendance_dict = attendance.dict()
     attendance_dict["employeeName"] = employee["fullName"]
     attendance_dict["createdAt"] = datetime.utcnow()
-    
     result = attendance_collection.insert_one(attendance_dict)
     created_attendance = attendance_collection.find_one({"_id": result.inserted_id})
-    
     return attendance_helper(created_attendance)
 
-@app.get("/")
-async def root():
-    return {"message": "HRMS Lite API is running", "version": "1.0.0"}
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 5000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy"}
